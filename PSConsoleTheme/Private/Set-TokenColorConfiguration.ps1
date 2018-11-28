@@ -79,41 +79,56 @@ function Set-TokenColorConfiguration {
 
     if (Get-Module PSReadLine) {
         Write-Debug "$action Readline Tokens"
-        # Breaking changes are coming in PSReadLine 2.0. Colors should be set via the -Color parameter with a hashtable
-        foreach ($token in @('ContinuationPrompt', 'DefaultToken', 'Comment', 'Keyword', 'String', 'Operator', 'Variable', 'Command', 'Parameter', 'Type', 'Number', 'Member', 'Emphasis', 'Error')) {
-            if ($tokenColors.foreground -and (Get-Member $token -InputObject ($tokenColors.foreground))) {
-                if ($token -in @('ContinuationPrompt', 'Emphasis', 'Error')) {
-                    $expression = "Set-PSReadlineOption -$($token)ForegroundColor $($tokenColors.foreground.($token))"
-                    Write-Debug $expression
-                    Invoke-Expression $expression
-                }
-                elseif ($token -eq 'DefaultToken') {
-                    Write-Debug "Set-PSReadlineOption 'None' -ForegroundColor $($tokenColors.foreground.($token))"
-                    Set-PSReadlineOption 'None' -ForegroundColor $tokenColors.foreground.($token)
-                }
-                else {
-                    Write-Debug "Set-PSReadlineOption $token -ForegroundColor $($tokenColors.foreground.($token))"
-                    Set-PSReadlineOption $token -ForegroundColor $tokenColors.foreground.($token)
+
+        if ((Get-Module PSReadLine).Version.Major -ge 2) {
+            # Breaking changes are coming in PSReadLine 2.0. Colors should be set via the -Colors parameter with a hashtable
+            $foregroundColors = @{}
+            foreach ($token in @('ContinuationPrompt', 'DefaultToken', 'Comment', 'Keyword', 'String', 'Operator', 'Variable', 'Command', 'Parameter', 'Type', 'Number', 'Member', 'Emphasis', 'Error')) {
+                if ($tokenColors.foreground -and (Get-Member $token -InputObject ($tokenColors.foreground))) {
+                    $foregroundColors[$token] = $($tokenColors.foreground.($token))
                 }
             }
 
-            $background = $Theme.background
-            if ($tokenColors.background -and (Get-Member $token -InputObject ($tokenColors.background))) {
-                $background = $tokenColors.background.($token)
-            }
-            if ($background) {
-                if ($token -in @('ContinuationPrompt', 'Emphasis', 'Error')) {
-                    $expression = "Set-PSReadlineOption -$($token)BackgroundColor $background"
-                    Write-Debug $expression
-                    Invoke-Expression $expression
+            $expression = "Set-PSReadlineOption -Colors `$foregroundColors"
+            Write-Debug $expression
+            Invoke-Expression $expression
+        }
+        else {
+            foreach ($token in @('ContinuationPrompt', 'DefaultToken', 'Comment', 'Keyword', 'String', 'Operator', 'Variable', 'Command', 'Parameter', 'Type', 'Number', 'Member', 'Emphasis', 'Error')) {
+                if ($tokenColors.foreground -and (Get-Member $token -InputObject ($tokenColors.foreground))) {
+                    if ($token -in @('ContinuationPrompt', 'Emphasis', 'Error')) {
+                        $expression = "Set-PSReadlineOption -$($token)ForegroundColor $($tokenColors.foreground.($token))"
+                        Write-Debug $expression
+                        Invoke-Expression $expression
+                    }
+                    elseif ($token -eq 'DefaultToken') {
+                        Write-Debug "Set-PSReadlineOption 'None' -ForegroundColor $($tokenColors.foreground.($token))"
+                        Set-PSReadlineOption 'None' -ForegroundColor $tokenColors.foreground.($token)
+                    }
+                    else {
+                        Write-Debug "Set-PSReadlineOption $token -ForegroundColor $($tokenColors.foreground.($token))"
+                        Set-PSReadlineOption $token -ForegroundColor $tokenColors.foreground.($token)
+                    }
                 }
-                elseif ($token -eq 'DefaultToken') {
-                    Write-Debug "Set-PSReadlineOption 'None' -BackgroundColor $background"
-                    Set-PSReadlineOption 'None' -BackgroundColor $background
+
+                $background = $Theme.background
+                if ($tokenColors.background -and (Get-Member $token -InputObject ($tokenColors.background))) {
+                    $background = $tokenColors.background.($token)
                 }
-                else {
-                    Write-Debug "Set-PSReadlineOption $token -BackgroundColor $background"
-                    Set-PSReadlineOption $token -BackgroundColor $background
+                if ($background) {
+                    if ($token -in @('ContinuationPrompt', 'Emphasis', 'Error')) {
+                        $expression = "Set-PSReadlineOption -$($token)BackgroundColor $background"
+                        Write-Debug $expression
+                        Invoke-Expression $expression
+                    }
+                    elseif ($token -eq 'DefaultToken') {
+                        Write-Debug "Set-PSReadlineOption 'None' -BackgroundColor $background"
+                        Set-PSReadlineOption 'None' -BackgroundColor $background
+                    }
+                    else {
+                        Write-Debug "Set-PSReadlineOption $token -BackgroundColor $background"
+                        Set-PSReadlineOption $token -BackgroundColor $background
+                    }
                 }
             }
         }
